@@ -1,36 +1,34 @@
+import { useEffect, memo } from 'react';
 import PropTypes from 'prop-types';
+import ItemContact from './ItemContact';
 import s from './ContactList.module.css';
 
-const ContactList = ({ filter, contacts, onDeleteContact }) => {
+const ContactList = props => {
+  const { filterName, filterContacts, onClickBtnDel, normalizeName } = props;
+
   return (
     <ul className={s.list}>
-      {contacts
-        .filter(({ name }) => name.toLowerCase().includes(filter.toLowerCase()))
-        .map(({ id, name, number }) => (
-          <li className={s.item} key={id} id={id}>
-            <p className={s.entry}>
-              <span>{name}</span>
-              <span className={s.number}>{number}</span>
-            </p>
-            <button type="button" onClick={onDeleteContact}>
-              Delete
-            </button>
-          </li>
-        ))}
+      {filterContacts(filterName).map(({ id, name, number }) => {
+        return (
+          <ItemContact
+            id={id}
+            key={id}
+            name={name}
+            number={number}
+            onClickBtnDel={onClickBtnDel}
+            normalizeName={normalizeName}
+          />
+        );
+      })}
     </ul>
   );
 };
 
 ContactList.propTypes = {
-  filter: PropTypes.string.isRequired,
-  contacts: PropTypes.arrayOf(
-    PropTypes.shape({
-      name: PropTypes.string.isRequired,
-      number: PropTypes.string.isRequired,
-      id: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
-  onDeleteContact: PropTypes.func.isRequired,
+  filterName: PropTypes.string,
+  filterContacts: PropTypes.func,
+  onClickBtnDel: PropTypes.func,
+  normalizeName: PropTypes.func,
 };
 
-export default ContactList;
+export default memo(ContactList);

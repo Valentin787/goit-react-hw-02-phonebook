@@ -1,83 +1,96 @@
-import ContactList from 'components/ContactList';
-import ContactForm from 'components/ContactForm';
-import Filter from 'components/Filter';
-import s from './App.module.css';
-import { Component } from 'react';
-import { nanoid } from 'nanoid';
+import { useState, useEffect } from 'react';
 
-class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
+import ContactForm from '../ContactForm';
+import ContactList from '../ContactList';
+import Filter from '../Filter';
+import * as storage from '../../services/localStorage.js';
+import s from './App.module.css';
+
+const CONTACTS_KEY_LS = 'contacts';
+
+const App = () => {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
+    const dataLocalStorage = storage.get(CONTACTS_KEY_LS);
+
+    if (dataLocalStorage) {
+      setContacts(dataLocalStorage);
+    }
+  }, []);
+
+  useEffect(() => {
+    storage.save(CONTACTS_KEY_LS, contacts);
+  }, [contacts]);
+
+  const addDataApp = e => {
+    setFilter(e.target.value);
   };
 
-  normalize = name => {
-    const words = name.split(' ');
-    return words
+  const normalizeName = name =>
+    name
+      .split(' ')
       .map(word => {
-        const capLetter = word.charAt(0).toUpperCase();
-        const rest = word.substring(1);
-        return `${capLetter}${rest}`;
+        const firstUpCaseLetter = word.charAt(0).toUpperCase();
+        const anoterLetter = word.substring(1);
+        return `${firstUpCaseLetter}${anoterLetter}`;
       })
       .join(' ');
-  };
 
-  handleAddContact = (name, number) => {
-    const normName = this.normalize(name);
-    const isDuplicate = this.state.contacts.find(
-      item => item.name === normName,
-    );
+  const addContacts = obj => {
+    const isHaveName = contacts.some(({ name }) => name === obj.name);
 
-    if (isDuplicate) {
-      alert(`${normName} is already in contacts.`);
-      return;
+    if (isHaveName) {
+      return alert(`${normalizeName(obj.name)} is alredy in contacts.`);
     }
 
-    const newContact = {
-      name: normName,
-      number,
-      id: nanoid(),
-    };
-
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, newContact],
-    }));
+    setContacts(prevState => [...prevState, obj]);
   };
 
-  handleFilter = e => {
-    this.setState({
-      filter: e.target.value,
-    });
+  const deleteContact = id => {
+    setContacts(prevState => prevState.filter(item => item.id !== id));
+    setFilter('');
   };
 
-  handleDeleteContact = e => {
-    const id = e.target.parentNode.id;
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(item => item.id !== id),
-    }));
-  };
-
-  render() {
-    return (
-      <div className={s.app}>
-        <h1 className={s.title}>Phonebook</h1>
-        <ContactForm onAddContact={this.handleAddContact} />
-
-        <h2 className={s.title}>Contacts</h2>
-        <Filter filter={this.state.filter} onFilter={this.handleFilter} />
-        <ContactList
-          filter={this.state.filter}
-          contacts={this.state.contacts}
-          onDeleteContact={this.handleDeleteContact}
-        />
-      </div>
+  const filterContacts = filterName => {
+    const normalizedData = filterName.toLowerCase();
+    const arrayFilter = contacts.filter(({ name }) =>
+      name.toLowerCase().includes(normalizedData),
     );
-  }
-}
+    return arrayFilter;
+  };
+
+  return (
+    <div className={s.app}>
+      <h1>Phonebook</h1>
+      <ContactForm onSubmitForm={addContacts} />
+
+      <h2>Contacts</h2>
+      {contacts.length > 1 && (
+        <Filter
+          onChangeDate={addDataApp}
+          value={contacts.length < 1 ? '' : filter}
+        />
+      )}
+      {!contacts.length && <p>Please, add contact!</p>}
+      {!!contacts.length && (
+        <ContactList
+          normalizeName={normalizeName}
+          onClickBtnDel={deleteContact}
+          filterContacts={filterContacts}
+          filterName={filter}
+        />
+      )}
+    </div>
+  );
+};
 
 export default App;
+
+// deleteContact = () => {
+//   const id = e.target.parentElement.id;
+//   this.setState(prevState => ({
+//     contacts: prevState.contacts.filter(item => item.id !== id),
+//   }));
+// };
